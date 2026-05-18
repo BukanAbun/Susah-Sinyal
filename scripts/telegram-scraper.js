@@ -11,6 +11,17 @@
  * 4. Run: npm run scrape -- <channel-url>
  */
 
+// Polyfill for Node.js 18 compatibility (undici needs File global)
+if (typeof global.File === 'undefined') {
+  global.File = class File extends Blob {
+    constructor(parts, filename, options) {
+      super(parts, options);
+      this.name = filename;
+      this.lastModified = options?.lastModified || Date.now();
+    }
+  };
+}
+
 require('dotenv').config();
 const admin = require('firebase-admin');
 const axios = require('axios');
