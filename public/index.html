@@ -1,53 +1,419 @@
 <!DOCTYPE html>
-<html>
-  <head>
+<html lang="en">
+<head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Welcome to Firebase Hosting</title>
+    <title>Trading Channel Feed</title>
 
-    <!-- update the version number as needed -->
+    <!-- Firebase SDK -->
     <script defer src="/__/firebase/12.12.1/firebase-app-compat.js"></script>
-    <!-- include only the Firebase features as you need -->
-    <script defer src="/__/firebase/12.12.1/firebase-auth-compat.js"></script>
-    <script defer src="/__/firebase/12.12.1/firebase-database-compat.js"></script>
     <script defer src="/__/firebase/12.12.1/firebase-firestore-compat.js"></script>
-    <script defer src="/__/firebase/12.12.1/firebase-functions-compat.js"></script>
-    <script defer src="/__/firebase/12.12.1/firebase-messaging-compat.js"></script>
-    <script defer src="/__/firebase/12.12.1/firebase-storage-compat.js"></script>
-    <script defer src="/__/firebase/12.12.1/firebase-analytics-compat.js"></script>
-    <script defer src="/__/firebase/12.12.1/firebase-remote-config-compat.js"></script>
-    <script defer src="/__/firebase/12.12.1/firebase-performance-compat.js"></script>
-    <!-- 
-      initialize the SDK after all desired features are loaded, set useEmulator to false
-      to avoid connecting the SDK to running emulators.
-    -->
-    <script defer src="/__/firebase/init.js?useEmulator=true"></script>
+    <script defer src="/__/firebase/init.js?useEmulator=false"></script>
 
-    <style media="screen">
-      body { background: #ECEFF1; color: rgba(0,0,0,0.87); font-family: Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; }
-      #message { background: white; max-width: 360px; margin: 100px auto 16px; padding: 32px 24px; border-radius: 3px; }
-      #message h2 { color: #ffa100; font-weight: bold; font-size: 16px; margin: 0 0 8px; }
-      #message h1 { font-size: 22px; font-weight: 300; color: rgba(0,0,0,0.6); margin: 0 0 16px;}
-      #message p { line-height: 140%; margin: 16px 0 24px; font-size: 14px; }
-      #message a { display: block; text-align: center; background: #039be5; text-transform: uppercase; text-decoration: none; color: white; padding: 16px; border-radius: 4px; }
-      #message, #message a { box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24); }
-      #load { color: rgba(0,0,0,0.4); text-align: center; font-size: 13px; }
-      @media (max-width: 600px) {
-        body, #message { margin-top: 0; background: white; box-shadow: none; }
-        body { border-top: 16px solid #ffa100; }
-      }
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.95;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            color: #667eea;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .status {
+            text-align: center;
+            color: white;
+            font-size: 0.9em;
+            margin-bottom: 15px;
+        }
+
+        .feed {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .post {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .post:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(0,0,0,0.2);
+        }
+
+        .post-date {
+            color: #999;
+            font-size: 0.85em;
+            margin-bottom: 10px;
+        }
+
+        .post-text {
+            font-size: 1.1em;
+            line-height: 1.6;
+            margin-bottom: 15px;
+            word-wrap: break-word;
+        }
+
+        .post-media {
+            margin: 15px 0;
+        }
+
+        .post-media img,
+        .post-media video {
+            max-width: 100%;
+            border-radius: 8px;
+            max-height: 400px;
+            object-fit: cover;
+        }
+
+        .post-media img + img,
+        .post-media img + video,
+        .post-media video + img,
+        .post-media video + video {
+            margin-top: 10px;
+        }
+
+        .post-link {
+            display: inline-block;
+            margin-top: 10px;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            padding: 8px 16px;
+            border: 2px solid #667eea;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+
+        .post-link:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .empty-state {
+            text-align: center;
+            background: white;
+            padding: 60px 20px;
+            border-radius: 12px;
+            color: #999;
+        }
+
+        .empty-state h2 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 12px;
+            color: white;
+            font-size: 1.1em;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 15px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #ff6b6b;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .last-updated {
+            text-align: center;
+            color: rgba(255,255,255,0.8);
+            font-size: 0.85em;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 600px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .post {
+                padding: 15px;
+            }
+
+            .post-text {
+                font-size: 1em;
+            }
+        }
     </style>
-  </head>
-  <body>
-    <div id="message">
-      <h2>Welcome</h2>
-      <h1>Firebase Hosting Setup Complete</h1>
-      <p>You're seeing this because you've successfully setup Firebase Hosting. Now it's time to go build something extraordinary!</p>
-      <a target="_blank" href="https://firebase.google.com/docs/hosting/">Open Hosting Documentation</a>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📱 Trading Channel</h1>
+            <p>Latest posts from @tradingmasnael</p>
+        </div>
+
+        <div class="controls">
+            <button class="btn" id="refreshBtn" onclick="loadPosts()">🔄 Refresh</button>
+            <button class="btn" id="autoRefreshBtn" onclick="toggleAutoRefresh()">⏱️ Auto Refresh: OFF</button>
+        </div>
+
+        <div id="status" class="status"></div>
+        <div id="error" class="error" style="display: none;"></div>
+
+        <div id="feed" class="feed">
+            <div class="loading">
+                <span class="spinner"></span>
+                Loading posts...
+            </div>
+        </div>
+
+        <div class="last-updated">
+            Last updated: <span id="lastUpdated">-</span>
+        </div>
     </div>
-    <p id="load">Firebase SDK Loading&hellip;</p>
 
     <script>
+        let db = null;
+        let autoRefreshEnabled = false;
+        let autoRefreshInterval = null;
+
+        // Initialize Firestore after Firebase SDK loads
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                if (firebase && firebase.firestore) {
+                    db = firebase.firestore();
+                    loadPosts();
+                    // Auto-refresh every 60 seconds
+                    setAutoRefreshInterval();
+                } else {
+                    showError('Firebase not initialized. Please check your connection.');
+                }
+            }, 1000);
+        });
+
+        async function loadPosts() {
+            if (!db) {
+                showError('Database not initialized');
+                return;
+            }
+
+            const feedDiv = document.getElementById('feed');
+            const statusDiv = document.getElementById('status');
+
+            try {
+                // Show loading state
+                feedDiv.innerHTML = '<div class="loading"><span class="spinner"></span>Loading posts...</div>';
+                statusDiv.textContent = 'Fetching latest posts...';
+
+                // Query Firestore: telegram_messages collection, ordered by date descending, limit 10
+                const querySnapshot = await db.collection('telegram_messages')
+                    .orderBy('date', 'desc')
+                    .limit(10)
+                    .get();
+
+                if (querySnapshot.empty) {
+                    feedDiv.innerHTML = `
+                        <div class="empty-state">
+                            <h2>No posts yet</h2>
+                            <p>Posts from @tradingmasnael will appear here once they're fetched.</p>
+                            <p style="margin-top: 15px; font-size: 0.9em;">Check back soon!</p>
+                        </div>
+                    `;
+                    statusDiv.textContent = 'No posts available';
+                    return;
+                }
+
+                // Render posts
+                feedDiv.innerHTML = '';
+                querySnapshot.forEach(doc => {
+                    const post = doc.data();
+                    const postEl = createPostElement(post);
+                    feedDiv.appendChild(postEl);
+                });
+
+                statusDiv.textContent = `Showing ${querySnapshot.size} posts`;
+                document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString();
+            } catch (error) {
+                console.error('Error loading posts:', error);
+                showError(`Failed to load posts: ${error.message}`);
+            }
+        }
+
+        function createPostElement(post) {
+            const div = document.createElement('div');
+            div.className = 'post';
+
+            // Format date
+            let dateStr = '-';
+            try {
+                const date = new Date(post.date);
+                dateStr = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+            } catch (e) {
+                dateStr = post.date || '-';
+            }
+
+            // Build HTML
+            let html = `<div class="post-date">${dateStr}</div>`;
+
+            if (post.text) {
+                html += `<div class="post-text">${escapeHtml(post.text)}</div>`;
+            }
+
+            if (post.mediaUrls && post.mediaUrls.length > 0) {
+                html += '<div class="post-media">';
+                post.mediaUrls.forEach(url => {
+                    if (url) {
+                        // Detect if image or video
+                        const isVideo = url.includes('.mp4') || url.includes('.webm') || url.includes('video');
+                        if (isVideo) {
+                            html += `<video controls width="100%" style="border-radius: 8px;"><source src="${escapeHtml(url)}"></video>`;
+                        } else {
+                            html += `<img src="${escapeHtml(url)}" alt="Post media">`;
+                        }
+                    }
+                });
+                html += '</div>';
+            }
+
+            // Add link to original Telegram message
+            const telegramLink = `https://t.me/s/tradingmasnael/${post.messageId}`;
+            html += `<a href="${telegramLink}" target="_blank" class="post-link">View on Telegram →</a>`;
+
+            div.innerHTML = html;
+            return div;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        function toggleAutoRefresh() {
+            autoRefreshEnabled = !autoRefreshEnabled;
+            const btn = document.getElementById('autoRefreshBtn');
+            
+            if (autoRefreshEnabled) {
+                btn.textContent = '⏱️ Auto Refresh: ON';
+                btn.style.background = '#667eea';
+                btn.style.color = 'white';
+                setAutoRefreshInterval();
+            } else {
+                btn.textContent = '⏱️ Auto Refresh: OFF';
+                btn.style.background = 'white';
+                btn.style.color = '#667eea';
+                clearAutoRefreshInterval();
+            }
+        }
+
+        function setAutoRefreshInterval() {
+            if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+            if (autoRefreshEnabled) {
+                autoRefreshInterval = setInterval(() => {
+                    loadPosts();
+                }, 60000); // Refresh every 60 seconds
+            }
+        }
+
+        function clearAutoRefreshInterval() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+            }
+        }
+    </script>
+</body>
+</html>
       document.addEventListener('DOMContentLoaded', function() {
         const loadEl = document.querySelector('#load');
         // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥

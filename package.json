@@ -1,5 +1,14 @@
 {
+  "name": "susah-sinyal",
+  "description": "Telegram Channel Posts Feed & Management",
+  "scripts": {
+    "scrape": "node scripts/telegram-scraper.js"
+  },
   "dependencies": {
-    "firebase": "^12.12.1"
+    "axios": "^1.16.1",
+    "cheerio": "^1.2.0",
+    "dotenv": "^16.6.1",
+    "firebase": "^12.12.1",
+    "firebase-admin": "^12.7.0"
   }
 }
