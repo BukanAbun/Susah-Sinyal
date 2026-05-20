@@ -3,8 +3,11 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Telegram Feed & Admin</title>
+    <title>Susah Sinyal</title>
     <link rel="icon" href="/favicon.ico">
+
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
 
     <!-- Firebase SDK -->
     <script defer src="/__/firebase/12.12.1/firebase-app-compat.js"></script>
@@ -13,608 +16,143 @@
 
     <!-- Design System CSS -->
     <link rel="stylesheet" href="main.css">
-
-    <style>
-        /* Layout */
-        .app {
-            display: flex;
-            height: 100vh;
-            background: #f8fafc;
-        }
-
-        .sidebar {
-            width: 280px;
-            background: #1e40af;
-            color: white;
-            overflow-y: auto;
-            position: fixed;
-            height: 100vh;
-            left: 0;
-            top: 0;
-            z-index: 100;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .sidebar-brand {
-            padding: var(--spacing-lg);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-md);
-            font-weight: 700;
-            font-size: 1.1rem;
-        }
-
-        .sidebar-brand i {
-            font-size: 1.8rem;
-        }
-
-        .sidebar-menu {
-            list-style: none;
-            padding: var(--spacing-md) 0;
-            flex: 1;
-        }
-
-        .sidebar-menu-item {
-            margin-bottom: var(--spacing-sm);
-        }
-
-        .sidebar-link {
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-md);
-            padding: var(--spacing-md) var(--spacing-lg);
-            color: rgba(255, 255, 255, 0.8);
-            text-decoration: none;
-            border-left: 3px solid transparent;
-            transition: all 0.2s ease;
-            font-weight: 500;
-            cursor: pointer;
-            background: none;
-            border: none;
-            width: 100%;
-            text-align: left;
-            font-size: 1rem;
-        }
-
-        .sidebar-link:hover {
-            background: rgba(255, 255, 255, 0.1);
-            border-left-color: rgba(255, 255, 255, 0.5);
-        }
-
-        .sidebar-link.active {
-            background: rgba(255, 255, 255, 0.15);
-            border-left-color: white;
-            color: white;
-        }
-
-        .sidebar-footer {
-            padding: var(--spacing-lg);
-            border-top: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .content {
-            flex: 1;
-            margin-left: 280px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .main-header {
-            background: linear-gradient(135deg, var(--brand) 0%, var(--brand-dark) 100%);
-            color: white;
-            padding: var(--spacing-xl);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .main-header h1 {
-            margin: 0;
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-md);
-            font-size: 1.8rem;
-        }
-
-        .main-content {
-            flex: 1;
-            overflow-y: auto;
-            padding: var(--spacing-xl);
-        }
-
-        .feed-container {
-            max-width: 800px;
-            margin: 0 auto;
-        }
-
-        .section {
-            display: none;
-            animation: fadeIn 0.3s ease;
-        }
-
-        .section.active {
-            display: block;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Feed Styles */
-        .post-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-lg);
-            overflow: hidden;
-            margin-bottom: var(--spacing-lg);
-            transition: var(--transition);
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-        }
-
-        .post-card:hover {
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-            transform: translateY(-2px);
-        }
-
-        .post-header {
-            padding: var(--spacing-lg);
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-        }
-
-        .post-author {
-            font-weight: 600;
-            color: var(--brand);
-            font-size: 0.95rem;
-        }
-
-        .post-date {
-            font-size: 0.85rem;
-            color: var(--text-tertiary);
-        }
-
-        .post-body {
-            padding: var(--spacing-lg);
-            line-height: 1.6;
-            color: var(--text);
-            word-wrap: break-word;
-            white-space: pre-wrap;
-            font-size: 0.95rem;
-        }
-
-        .controls {
-            display: flex;
-            gap: var(--spacing-md);
-            margin-bottom: var(--spacing-xl);
-            flex-wrap: wrap;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: var(--spacing-lg);
-            margin-bottom: var(--spacing-xl);
-        }
-
-        .stat-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-lg);
-            padding: var(--spacing-lg);
-            text-align: center;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-        }
-
-        .stat-value {
-            font-size: 2rem;
-            font-weight: 700;
-            color: var(--brand);
-            margin-bottom: var(--spacing-sm);
-        }
-
-        .stat-label {
-            color: var(--text-secondary);
-            font-weight: 500;
-            font-size: 0.9rem;
-        }
-
-        .empty-feed {
-            text-align: center;
-            padding: var(--spacing-xl);
-            color: var(--text-tertiary);
-        }
-
-        .empty-feed i {
-            font-size: 3rem;
-            color: var(--border);
-            margin-bottom: var(--spacing-lg);
-        }
-
-        .loading-spinner {
-            text-align: center;
-            padding: var(--spacing-xl);
-        }
-
-        .channel-filter {
-            display: flex;
-            gap: var(--spacing-sm);
-            flex-wrap: wrap;
-            margin-bottom: var(--spacing-lg);
-        }
-
-        .filter-btn {
-            padding: 0.5rem 1rem;
-            border: 1px solid var(--border);
-            background: white;
-            border-radius: var(--radius-md);
-            cursor: pointer;
-            font-size: 0.9rem;
-            font-weight: 500;
-            transition: var(--transition);
-            color: var(--text-secondary);
-        }
-
-        .filter-btn:hover {
-            border-color: var(--brand);
-            color: var(--brand);
-            background: var(--bg-light);
-        }
-
-        .filter-btn.active {
-            background: var(--brand);
-            color: white;
-            border-color: var(--brand);
-        }
-
-        .pagination-container {
-            display: flex;
-            gap: var(--spacing-md);
-            justify-content: center;
-            align-items: center;
-            margin-top: var(--spacing-xl);
-        }
-
-        .pagination-btn {
-            padding: 0.75rem 1.5rem;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-md);
-            cursor: pointer;
-            font-weight: 500;
-            transition: var(--transition);
-            color: var(--text);
-        }
-
-        .pagination-btn:hover {
-            background: var(--brand);
-            color: white;
-            border-color: var(--brand);
-        }
-
-        .pagination-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .page-info {
-            color: var(--text-secondary);
-            font-weight: 500;
-            min-width: 120px;
-            text-align: center;
-        }
-
-        /* Admin Styles */
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: var(--spacing-lg);
-            margin-bottom: var(--spacing-xl);
-        }
-
-        .dashboard-block {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .block-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0.9rem 1.2rem 0.8rem;
-            border-bottom: 1px solid var(--border);
-            background: var(--brand);
-        }
-
-        .block-header h3 {
-            font-size: 0.85rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.09em;
-            color: #ffffff;
-            margin: 0;
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-sm);
-        }
-
-        .block-body {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 1.5rem;
-        }
-
-        .block-count {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: var(--brand);
-            text-align: center;
-        }
-
-        .block-subtitle {
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-            margin-top: var(--spacing-sm);
-        }
-
-        .list-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: var(--spacing-lg);
-            background: var(--bg-light);
-            border-radius: var(--radius-md);
-            border-left: 4px solid var(--brand);
-            margin-bottom: var(--spacing-md);
-        }
-
-        .list-item-info h4 {
-            margin-bottom: var(--spacing-sm);
-            color: var(--text);
-        }
-
-        .list-item-meta {
-            font-size: 0.85rem;
-            color: var(--text-tertiary);
-        }
-
-        .badge-super {
-            background: #fcd34d;
-            color: #78350f;
-            padding: 0.3rem 0.8rem;
-            border-radius: var(--radius-sm);
-            font-size: 0.75rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        #channelListContainer, #adminListContainer {
-            display: grid;
-            gap: var(--spacing-lg);
-        }
-
-        .card {
-            background: white;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-            margin-bottom: var(--spacing-xl);
-        }
-
-        .card-header {
-            padding: 1.5rem;
-            border-bottom: 1px solid #e2e8f0;
-            background: #f8fafc;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .card-header h2 {
-            margin: 0;
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: var(--brand);
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-sm);
-        }
-
-        .card-body {
-            padding: 1.5rem;
-        }
-
-        .form-row {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: var(--spacing-lg);
-            margin-bottom: var(--spacing-lg);
-        }
-
-        .form-group {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .form-group label {
-            font-weight: 600;
-            color: var(--text);
-            margin-bottom: var(--spacing-sm);
-            font-size: 0.95rem;
-        }
-
-        .form-group input {
-            padding: 0.75rem;
-            border: 1px solid var(--border);
-            border-radius: var(--radius-md);
-            font-size: 1rem;
-            font-family: 'Nunito', sans-serif;
-            transition: all 0.2s ease;
-        }
-
-        .form-group input:focus {
-            outline: none;
-            border-color: var(--brand);
-            box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: var(--spacing-xl);
-            color: var(--text-tertiary);
-        }
-
-        .empty-state i {
-            font-size: 2.5rem;
-            color: var(--border);
-            margin-bottom: var(--spacing-md);
-        }
-
-        .alerts {
-            margin-bottom: var(--spacing-lg);
-        }
-
-        .alert {
-            padding: var(--spacing-lg);
-            border-radius: var(--radius-md);
-            margin-bottom: var(--spacing-md);
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-md);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .alert.show {
-            opacity: 1;
-        }
-
-        .alert-info {
-            background: #dbeafe;
-            color: #1e40af;
-            border: 1px solid #93c5fd;
-        }
-
-        .alert-success {
-            background: #dcfce7;
-            color: #16a34a;
-            border: 1px solid #86efac;
-        }
-
-        .alert-error {
-            background: #fee2e2;
-            color: #dc2626;
-            border: 1px solid #fca5a5;
-        }
-
-        .alert-warning {
-            background: #fef3c7;
-            color: #b45309;
-            border: 1px solid #fcd34d;
-        }
-
-        @media (max-width: 768px) {
-            .sidebar {
-                position: absolute;
-                left: -280px;
-                transition: left 0.3s ease;
-                z-index: 1000;
-            }
-
-            .sidebar.active {
-                left: 0;
-            }
-
-            .content {
-                margin-left: 0;
-            }
-
-            .main-header h1 {
-                font-size: 1.3rem;
-            }
-
-            .main-content {
-                padding: var(--spacing-lg);
-            }
-        }
-    </style>
 </head>
 <body>
     <div class="app">
-        <!-- Sidebar -->
-        <aside class="sidebar">
-            <div class="sidebar-brand">
-                <i class="bi bi-broadcast"></i>
-                <span>Telegram</span>
+        <!-- Desktop Sidebar Navigation -->
+        <aside class="sidebar desktop-only">
+            <div class="brand">
+                <div class="brand-icon">
+                    <img src="no-signal.png" alt="Logo">
+                </div>
+                <div class="brand-text">
+                    <span>PROJECT</span>
+                    <strong>Susah Sinyal</strong>
+                </div>
             </div>
-            <ul class="sidebar-menu">
-                <li class="sidebar-menu-item">
-                    <button class="sidebar-link active" onclick="showView('feed')">
+
+            <nav class="main-nav">
+                <div class="nav-label">SERVICES</div>
+                <button class="nav-item active" data-page="feed" onclick="showView('feed')">
+                    <div class="nav-icon">
                         <i class="bi bi-house-fill"></i>
-                        <span>Posts Feed</span>
-                    </button>
-                </li>
-                <li class="sidebar-menu-item" id="adminNavItem" style="display: none;">
-                    <button class="sidebar-link" onclick="showView('dashboard')">
-                        <i class="bi bi-speedometer2"></i>
-                        <span>Dashboard</span>
-                    </button>
-                </li>
-                <li class="sidebar-menu-item" id="channelsNavItem" style="display: none;">
-                    <button class="sidebar-link" onclick="showView('channels')">
-                        <i class="bi bi-collection"></i>
-                        <span>Channels</span>
-                    </button>
-                </li>
-                <li class="sidebar-menu-item" id="adminsNavItem" style="display: none;">
-                    <button class="sidebar-link" onclick="showView('admins')">
-                        <i class="bi bi-shield-lock"></i>
-                        <span>Admin Users</span>
-                    </button>
-                </li>
-            </ul>
-            <div class="sidebar-footer">
-                <div id="loginSection">
-                    <div style="margin-bottom: var(--spacing-md);">
-                        <input type="password" id="adminPassword" placeholder="Password" style="width: 100%; padding: 0.6rem; border: 1px solid rgba(255,255,255,0.3); border-radius: 4px; background: rgba(255,255,255,0.1); color: white; font-size: 0.9rem;" onkeypress="if(event.key==='Enter') checkPassword()">
                     </div>
-                    <button class="btn btn-primary" onclick="checkPassword()" style="width: 100%; justify-content: center; font-size: 0.9rem; padding: 0.6rem;">
-                        <i class="bi bi-lock"></i> Login
-                    </button>
-                </div>
-                <div id="logoutSection" style="display: none;">
-                    <button class="btn btn-secondary" onclick="logout()" style="width: 100%; color: white; background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.3); justify-content: center; font-size: 0.9rem; padding: 0.6rem;">
-                        <i class="bi bi-box-arrow-right"></i> Logout
-                    </button>
-                </div>
+                    <span>Posts Feed</span>
+                </button>
+
+                <div class="nav-label admin-label" id="adminLabel" style="display: none; margin-top: 1rem;">ADMIN</div>
+                <button class="nav-item" data-page="dashboard" id="dashboardNav" style="display: none;" onclick="showView('dashboard')">
+                    <div class="nav-icon">
+                        <i class="bi bi-speedometer2"></i>
+                    </div>
+                    <span>Dashboard</span>
+                </button>
+                <button class="nav-item" data-page="channels" id="channelsNav" style="display: none;" onclick="showView('channels')">
+                    <div class="nav-icon">
+                        <i class="bi bi-collection"></i>
+                    </div>
+                    <span>Channels</span>
+                </button>
+                <button class="nav-item" data-page="admins" id="adminsNav" style="display: none;" onclick="showView('admins')">
+                    <div class="nav-icon">
+                        <i class="bi bi-shield-lock"></i>
+                    </div>
+                    <span>Admin Users</span>
+                </button>
+            </nav>
+
+            <div id="desktopLoginSection">
+                <input type="password" id="adminPassword" placeholder="Password" style="width: 95%; margin: 0 auto 0.75rem; padding: 0.6rem; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; background: rgba(255,255,255,0.1); color: white; font-size: 0.85rem; font-family: inherit;" onkeypress="if(event.key==='Enter') checkPassword()">
+                <button class="nav-item-logout" onclick="checkPassword()" style="margin: 0 0.85rem 0.5rem;">
+                    <div class="nav-icon">
+                        <i class="bi bi-lock"></i>
+                    </div>
+                    <span>Login</span>
+                </button>
+            </div>
+            <div id="desktopLogoutSection" style="display: none;">
+                <button class="nav-item-logout" onclick="logout()">
+                    <div class="nav-icon">
+                        <i class="bi bi-box-arrow-right"></i>
+                    </div>
+                    <span>Logout</span>
+                </button>
             </div>
         </aside>
 
+        <!-- Mobile Header -->
+        <div class="mobile-header mobile-only">
+            <div class="mobile-header-left">
+                <div class="mobile-logo-wrap">
+                    <img src="no-signal.png" alt="Logo">
+                </div>
+                <div class="mobile-header-text">
+                    <span>PROJECT</span>
+                    <strong>Susah Sinyal</strong>
+                </div>
+            </div>
+            <button class="mobile-menu-toggle" id="mobile-menu-toggle">
+                <i class="bi bi-list"></i>
+            </button>
+        </div>
+
+        <!-- Mobile Navigation Dropdown -->
+        <div class="mobile-nav-wrap mobile-only" id="mobile-nav-wrap">
+            <div class="mobile-nav-menu">
+                <div class="mobile-nav-section">
+                    <div class="mobile-nav-label">SERVICES</div>
+                    <button class="mobile-nav-item active" data-page="feed" onclick="showView('feed'); closeMobileMenu()">
+                        <div class="mobile-nav-icon">
+                            <i class="bi bi-house-fill"></i>
+                        </div>
+                        <span>Posts Feed</span>
+                    </button>
+                </div>
+
+                <div class="mobile-nav-section" id="mobileAdminSection" style="display: none;">
+                    <div class="mobile-nav-label">ADMIN</div>
+                    <button class="mobile-nav-item" data-page="dashboard" onclick="showView('dashboard'); closeMobileMenu()">
+                        <div class="mobile-nav-icon">
+                            <i class="bi bi-speedometer2"></i>
+                        </div>
+                        <span>Dashboard</span>
+                    </button>
+                    <button class="mobile-nav-item" data-page="channels" onclick="showView('channels'); closeMobileMenu()">
+                        <div class="mobile-nav-icon">
+                            <i class="bi bi-collection"></i>
+                        </div>
+                        <span>Channels</span>
+                    </button>
+                    <button class="mobile-nav-item" data-page="admins" onclick="showView('admins'); closeMobileMenu()">
+                        <div class="mobile-nav-icon">
+                            <i class="bi bi-shield-lock"></i>
+                        </div>
+                        <span>Admin Users</span>
+                    </button>
+                </div>
+
+                <div class="mobile-nav-section" id="mobileLoginSection">
+                    <input type="password" id="mobileAdminPassword" placeholder="Password" style="width: calc(100% - 1.8rem); margin: 0.5rem 0.9rem; padding: 0.6rem; border: 1px solid var(--border); border-radius: 6px; background: white; color: var(--text); font-size: 0.85rem; font-family: inherit;" onkeypress="if(event.key==='Enter') checkPassword()">
+                    <button class="mobile-nav-item" onclick="checkPassword(); closeMobileMenu()" style="margin: 0 0.4rem 0.5rem;">
+                        <div class="mobile-nav-icon">
+                            <i class="bi bi-lock"></i>
+                        </div>
+                        <span>Login</span>
+                    </button>
+                </div>
+                <div class="mobile-nav-section" id="mobileLogoutSection" style="display: none;">
+                    <button class="mobile-nav-item" onclick="logout(); closeMobileMenu()">
+                        <div class="mobile-nav-icon">
+                            <i class="bi bi-box-arrow-right"></i>
+                        </div>
+                        <span>Logout</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- Main Content -->
         <div class="content">
-            <!-- Header -->
-            <header class="main-header">
-                <h1 id="headerTitle">
-                    <i class="bi bi-broadcast"></i>
-                    Telegram Posts Feed
-                </h1>
-            </header>
-
             <!-- Main Content Area -->
             <main class="main-content">
                 <!-- Feed Section -->
@@ -811,17 +349,41 @@
                 }
                 loadPosts();
                 setupSearchFilter();
+                setupMobileMenuToggle();
             } catch (error) {
                 console.error('Init error:', error);
             }
         }
 
+        function setupMobileMenuToggle() {
+            const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+            if (mobileMenuToggle) {
+                mobileMenuToggle.addEventListener('click', toggleMobileMenu);
+            }
+            
+            // Close mobile menu when clicking outside
+            document.addEventListener('click', function(event) {
+                const mobileNavWrap = document.getElementById('mobile-nav-wrap');
+                const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+                
+                if (mobileNavWrap && mobileNavWrap.classList.contains('active')) {
+                    if (!mobileNavWrap.contains(event.target) && !mobileMenuToggle.contains(event.target)) {
+                        closeMobileMenu();
+                    }
+                }
+            });
+        }
+
         function checkPassword() {
-            const password = document.getElementById('adminPassword').value;
+            const desktopPassword = document.getElementById('adminPassword').value;
+            const mobilePassword = document.getElementById('mobileAdminPassword').value;
+            const password = desktopPassword || mobilePassword;
+            
             if (password === 'password') {
                 localStorage.setItem('adminLoggedIn', 'true');
                 isAdminLoggedIn = true;
                 document.getElementById('adminPassword').value = '';
+                document.getElementById('mobileAdminPassword').value = '';
                 showAdminUI();
                 loadAdminList();
                 loadChannels();
@@ -841,26 +403,61 @@
         }
 
         function showAdminUI() {
-            document.getElementById('loginSection').style.display = 'none';
-            document.getElementById('logoutSection').style.display = 'block';
-            document.getElementById('adminNavItem').style.display = 'block';
-            document.getElementById('channelsNavItem').style.display = 'block';
-            document.getElementById('adminsNavItem').style.display = 'block';
+            document.getElementById('desktopLoginSection').style.display = 'none';
+            document.getElementById('desktopLogoutSection').style.display = 'block';
+            document.getElementById('adminLabel').style.display = 'block';
+            document.getElementById('dashboardNav').style.display = 'flex';
+            document.getElementById('channelsNav').style.display = 'flex';
+            document.getElementById('adminsNav').style.display = 'flex';
+            
+            document.getElementById('mobileLoginSection').style.display = 'none';
+            document.getElementById('mobileLogoutSection').style.display = 'block';
+            document.getElementById('mobileAdminSection').style.display = 'block';
         }
 
         function showFeedUI() {
-            document.getElementById('loginSection').style.display = 'block';
-            document.getElementById('logoutSection').style.display = 'none';
-            document.getElementById('adminNavItem').style.display = 'none';
-            document.getElementById('channelsNavItem').style.display = 'none';
-            document.getElementById('adminsNavItem').style.display = 'none';
+            document.getElementById('desktopLoginSection').style.display = 'block';
+            document.getElementById('desktopLogoutSection').style.display = 'none';
+            document.getElementById('adminLabel').style.display = 'none';
+            document.getElementById('dashboardNav').style.display = 'none';
+            document.getElementById('channelsNav').style.display = 'none';
+            document.getElementById('adminsNav').style.display = 'none';
+            
+            document.getElementById('mobileLoginSection').style.display = 'block';
+            document.getElementById('mobileLogoutSection').style.display = 'none';
+            document.getElementById('mobileAdminSection').style.display = 'none';
             showView('feed');
+        }
+
+        function toggleMobileMenu() {
+            const mobileNavWrap = document.getElementById('mobile-nav-wrap');
+            const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+            if (mobileNavWrap) {
+                mobileNavWrap.classList.toggle('active');
+            }
+            if (mobileMenuToggle) {
+                mobileMenuToggle.classList.toggle('active');
+            }
+        }
+
+        function closeMobileMenu() {
+            const mobileNavWrap = document.getElementById('mobile-nav-wrap');
+            const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+            if (mobileNavWrap) {
+                mobileNavWrap.classList.remove('active');
+            }
+            if (mobileMenuToggle) {
+                mobileMenuToggle.classList.remove('active');
+            }
         }
 
         function showView(view) {
             // Hide all sections
             document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.sidebar-link').forEach(el => el.classList.remove('active'));
+            
+            // Remove active from all nav items
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.mobile-nav-item').forEach(el => el.classList.remove('active'));
 
             // Show selected section
             const section = document.getElementById(`${view}-section`);
@@ -868,26 +465,9 @@
                 section.classList.add('active');
             }
 
-            // Update active link - handle both click events and programmatic calls
-            const viewMap = {
-                'feed': 0,
-                'dashboard': 1,
-                'channels': 2,
-                'admins': 3
-            };
-            const sidebarLinks = document.querySelectorAll('.sidebar-link');
-            if (sidebarLinks[viewMap[view]]) {
-                sidebarLinks[viewMap[view]].classList.add('active');
-            }
-
-            // Update header
-            const titles = {
-                'feed': '<i class="bi bi-broadcast"></i> Telegram Posts Feed',
-                'dashboard': '<i class="bi bi-speedometer2"></i> Dashboard',
-                'channels': '<i class="bi bi-collection"></i> Manage Channels',
-                'admins': '<i class="bi bi-shield-lock"></i> Admin Users'
-            };
-            document.getElementById('headerTitle').innerHTML = titles[view] || titles['feed'];
+            // Update active nav items
+            const navItems = document.querySelectorAll(`[data-page="${view}"]`);
+            navItems.forEach(item => item.classList.add('active'));
 
             if (view === 'dashboard') {
                 updateDashboardStats();
