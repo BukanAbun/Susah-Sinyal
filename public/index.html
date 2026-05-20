@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Telegram Feed & Admin</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%231e40af'><path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z'/></svg>" type="image/svg+xml">
+    <link rel="icon" href="/favicon.ico">
 
     <!-- Firebase SDK -->
     <script defer src="/__/firebase/12.12.1/firebase-app-compat.js"></script>
@@ -905,8 +905,36 @@
                 const adminSnap = await adminRef.get();
                 const adminCount = adminSnap.exists ? (adminSnap.data().emails || []).length + 1 : 1;
                 document.getElementById('stat-admins').textContent = adminCount;
+
+                // Get last scrape info from all channels
+                let lastScrapeDate = null;
+                let lastScrapeStatus = 'unknown';
+                let latestTimestamp = null;
+
+                channelsSnap.docs.forEach(doc => {
+                    const data = doc.data();
+                    if (data.lastScrapedDate) {
+                        const timestamp = data.lastScrapedDate.toDate().getTime();
+                        if (!latestTimestamp || timestamp > latestTimestamp) {
+                            latestTimestamp = timestamp;
+                            lastScrapeDate = data.lastScrapedDate.toDate();
+                            lastScrapeStatus = data.lastScrapeStatus || 'success';
+                        }
+                    }
+                });
+
+                // Format and display last scrape info
+                if (lastScrapeDate) {
+                    const options = { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true };
+                    const formattedDate = lastScrapeDate.toLocaleDateString('en-US', options);
+                    const statusLabel = lastScrapeStatus === 'success' ? '✓ Success' : '✗ Failed';
+                    document.getElementById('stat-last-scrape').textContent = `${formattedDate} • ${statusLabel}`;
+                } else {
+                    document.getElementById('stat-last-scrape').textContent = 'Never';
+                }
             } catch (error) {
                 console.error('Stats error:', error);
+                document.getElementById('stat-last-scrape').textContent = 'Error';
             }
         }
 

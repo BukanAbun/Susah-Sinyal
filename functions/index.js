@@ -68,50 +68,96 @@ exports.scrapeTelegram = functions.https.onRequest(async (req, res) => {
 
     console.log(`[${userEmail}] Scraping channel: ${channelUrl}`);
 
-    // Scrape the channel
-    const messages = await scrapeTelegramChannel(channelUrl);
+    try {
+      // Scrape the channel
+      const messages = await scrapeTelegramChannel(channelUrl);
 
-    if (messages.length === 0) {
+      if (messages.length === 0) {
+        // Update channel metadata - successful scrape with 0 messages
+        const channelRef = db.collection('telegram_channels').doc(channelId);
+        await channelRef.update({
+          lastScrapedDate: new Date(),
+          lastScrapedBy: userEmail,
+          lastScrapeStatus: 'success'
+        }).catch(async () => {
+          // If channel doc doesn't exist, create it
+          await channelRef.set({
+            channelId,
+            channelUrl,
+            createdDate: new Date(),
+            lastScrapedDate: new Date(),
+            lastScrapedBy: userEmail,
+            lastScrapeStatus: 'success',
+            totalMessages: 0
+          });
+        });
+
+        res.status(200).json({
+          success: true,
+          channelId,
+          newCount: 0,
+          duplicateCount: 0,
+          totalScraped: 0,
+          errors: []
+        });
+        return;
+      }
+
+      // Save to Firestore
+      const result = await saveMessagesToFirestore(db, messages);
+
+      // Update channel metadata - successful scrape
+      const channelRef = db.collection('telegram_channels').doc(channelId);
+      await channelRef.update({
+        lastScrapedDate: new Date(),
+        lastScrapedBy: userEmail,
+        lastScrapeStatus: 'success',
+        totalMessages: admin.firestore.FieldValue.increment(result.newCount)
+      }).catch(async () => {
+        // If channel doc doesn't exist, create it
+        await channelRef.set({
+          channelId,
+          channelUrl,
+          createdDate: new Date(),
+          lastScrapedDate: new Date(),
+          lastScrapedBy: userEmail,
+          lastScrapeStatus: 'success',
+          totalMessages: result.newCount
+        });
+      });
+
       res.status(200).json({
         success: true,
         channelId,
-        newCount: 0,
-        duplicateCount: 0,
-        totalScraped: 0,
-        errors: []
+        newCount: result.newCount,
+        duplicateCount: result.duplicateCount,
+        totalScraped: messages.length,
+        errors: result.errors
       });
-      return;
-    }
-
-    // Save to Firestore
-    const result = await saveMessagesToFirestore(db, messages);
-
-    // Update channel metadata
-    const channelRef = db.collection('telegram_channels').doc(channelId);
-    await channelRef.update({
-      lastScrapedDate: new Date(),
-      lastScrapedBy: userEmail,
-      totalMessages: admin.firestore.FieldValue.increment(result.newCount)
-    }).catch(async () => {
-      // If channel doc doesn't exist, create it
-      await channelRef.set({
-        channelId,
-        channelUrl,
-        createdDate: new Date(),
+    } catch (scrapeError) {
+      // Scrape failed - record the failure
+      console.error(`Scrape failed for ${channelUrl}:`, scrapeError.message);
+      const channelRef = db.collection('telegram_channels').doc(channelId);
+      await channelRef.update({
         lastScrapedDate: new Date(),
         lastScrapedBy: userEmail,
-        totalMessages: result.newCount
+        lastScrapeStatus: 'failed',
+        lastScrapeError: scrapeError.message
+      }).catch(async () => {
+        // If channel doc doesn't exist, create it
+        await channelRef.set({
+          channelId,
+          channelUrl,
+          createdDate: new Date(),
+          lastScrapedDate: new Date(),
+          lastScrapedBy: userEmail,
+          lastScrapeStatus: 'failed',
+          lastScrapeError: scrapeError.message,
+          totalMessages: 0
+        });
       });
-    });
-
-    res.status(200).json({
-      success: true,
-      channelId,
-      newCount: result.newCount,
-      duplicateCount: result.duplicateCount,
-      totalScraped: messages.length,
-      errors: result.errors
-    });
+      throw scrapeError;
+    }
   } catch (error) {
     console.error('Error in scrapeTelegram function:', error);
     res.status(500).json({
